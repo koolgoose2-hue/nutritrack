@@ -441,14 +441,28 @@ function NutriTrackApp() {
       const analysis = await analyzeFood(foodInput, profile);
       const logData = {
         name: analysis.name,
-        nutrients: analysis.nutrients,
+        nutrients: {
+          calories: analysis.nutrients.calories || 0,
+          protein: analysis.nutrients.protein || 0,
+          carbs: analysis.nutrients.carbs || 0,
+          fat: analysis.nutrients.fat || 0,
+          fiber: analysis.nutrients.fiber || 0,
+          vitaminA: analysis.nutrients.vitaminA || 0,
+          vitaminC: analysis.nutrients.vitaminC || 0,
+          calcium: analysis.nutrients.calcium || 0,
+          iron: analysis.nutrients.iron || 0,
+        },
         warnings: analysis.warnings || [],
         timestamp: new Date(selectedDate + 'T' + new Date().toLocaleTimeString('en-US', { hour12: false })).getTime(),
       };
+      console.log("Adding food log:", logData);
       const logsColRef = collection(db, 'users', user.uid, 'logs');
       await addDoc(logsColRef, logData);
       setFoodInput('');
     } catch (err: any) {
+      if (err.code === 'permission-denied' || (err.message && err.message.includes('permissions'))) {
+        handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/logs`);
+      }
       const msg = err.message || 'Failed to analyze food. Please try again.';
       setError(msg);
       console.error("Food analysis error:", err);
@@ -466,16 +480,37 @@ function NutriTrackApp() {
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const analysis = await analyzeFoodImage(base64, profile);
-        const logData = {
-          name: analysis.name,
-          nutrients: analysis.nutrients,
-          warnings: analysis.warnings || [],
-          timestamp: new Date(selectedDate + 'T' + new Date().toLocaleTimeString('en-US', { hour12: false })).getTime(),
-        };
-        const logsColRef = collection(db, 'users', user.uid, 'logs');
-        await addDoc(logsColRef, logData);
+        try {
+          const base64 = (reader.result as string).split(',')[1];
+          const analysis = await analyzeFoodImage(base64, profile);
+          const logData = {
+            name: analysis.name,
+            nutrients: {
+              calories: analysis.nutrients.calories || 0,
+              protein: analysis.nutrients.protein || 0,
+              carbs: analysis.nutrients.carbs || 0,
+              fat: analysis.nutrients.fat || 0,
+              fiber: analysis.nutrients.fiber || 0,
+              vitaminA: analysis.nutrients.vitaminA || 0,
+              vitaminC: analysis.nutrients.vitaminC || 0,
+              calcium: analysis.nutrients.calcium || 0,
+              iron: analysis.nutrients.iron || 0,
+            },
+            warnings: analysis.warnings || [],
+            timestamp: new Date(selectedDate + 'T' + new Date().toLocaleTimeString('en-US', { hour12: false })).getTime(),
+          };
+          console.log("Adding image food log:", logData);
+          const logsColRef = collection(db, 'users', user.uid, 'logs');
+          await addDoc(logsColRef, logData);
+        } catch (err: any) {
+          if (err.code === 'permission-denied' || (err.message && err.message.includes('permissions'))) {
+            handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/logs`);
+          }
+          setError(err.message || 'Failed to analyze image.');
+          console.error("Image analysis error:", err);
+        } finally {
+          setIsLoading(false);
+        }
       };
       reader.readAsDataURL(file);
     } catch (err: any) {

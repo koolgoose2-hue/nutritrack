@@ -72,10 +72,13 @@ service cloud.firestore {
     }
 
     function isValidNutrientData(data) {
-      return hasRequiredFields(['calories', 'protein', 'carbs', 'fat', 'fiber', 'vitaminA', 'vitaminC', 'calcium', 'iron']) &&
+      return hasRequiredFields(['calories', 'protein', 'carbs', 'fat', 'fiber']) &&
              data.calories is number && data.protein is number && data.carbs is number &&
-             data.fat is number && data.fiber is number && data.vitaminA is number &&
-             data.vitaminC is number && data.calcium is number && data.iron is number;
+             data.fat is number && data.fiber is number &&
+             (!('vitaminA' in data) || data.vitaminA is number) &&
+             (!('vitaminC' in data) || data.vitaminC is number) &&
+             (!('calcium' in data) || data.calcium is number) &&
+             (!('iron' in data) || data.iron is number);
     }
 
     function isValidLogEntry(data) {
