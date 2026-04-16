@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User's basic profile information.",
+      "type": "object",
+      "properties": {
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "dietaryRestrictions": { "type": "array", "items": { "type": "string" } },
+        "allergies": { "type": "array", "items": { "type": "string" } },
+        "activityLevel": { "type": "string", "enum": ["sedentary", "light", "moderate", "active", "very_active"] },
+        "medicalConditions": { "type": "array", "items": { "type": "string" } },
+        "bloodTestSummary": { "type": "string" }
+      },
+      "required": ["age", "gender"]
+    },
+    "NutrientData": {
+      "title": "NutrientData",
+      "description": "Daily nutrient targets for the user.",
+      "type": "object",
+      "properties": {
+        "calories": { "type": "number" },
+        "protein": { "type": "number" },
+        "carbs": { "type": "number" },
+        "fat": { "type": "number" },
+        "fiber": { "type": "number" },
+        "vitaminA": { "type": "number" },
+        "vitaminC": { "type": "number" },
+        "calcium": { "type": "number" },
+        "iron": { "type": "number" }
+      },
+      "required": ["calories", "protein", "carbs", "fat", "fiber", "vitaminA", "vitaminC", "calcium", "iron"]
+    },
+    "LogEntry": {
+      "title": "LogEntry",
+      "description": "A single food log entry.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "nutrients": { "$ref": "NutrientData" },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "imageUrl": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "timestamp", "nutrients"]
+    },
+    "WaterLog": {
+      "title": "WaterLog",
+      "description": "Tracks water intake.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["amount", "timestamp"]
+    },
+    "Recipe": {
+      "title": "Recipe",
+      "description": "A saved meal recipe.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "nutrients": { "$ref": "NutrientData" }
+      },
+      "required": ["name", "nutrients"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/users/{userId}/targets/daily": {
+      "schema": "NutrientData",
+      "description": "User's daily nutrient targets."
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": "LogEntry",
+      "description": "User's food log entries."
+    },
+    "/users/{userId}/water/{waterId}": {
+      "schema": "WaterLog",
+      "description": "User's water logs."
+    },
+    "/users/{userId}/recipes/{recipeId}": {
+      "schema": "Recipe",
+      "description": "User's saved recipes."
+    }
+  }
+}

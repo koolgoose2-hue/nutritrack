@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}
+    // Fields:
+    //   - age: number (required)
+    //   - gender: string (required, ['male', 'female', 'other'])
+    //
+    // Collection: users/{userId}/targets/daily
+    // Fields:
+    //   - calories: number (required)
+    //   - protein: number (required)
+    //   - carbs: number (required)
+    //   - fat: number (required)
+    //   - fiber: number (required)
+    //   - vitaminA: number (required)
+    //   - vitaminC: number (required)
+    //   - calcium: number (required)
+    //   - iron: number (required)
+    //
+    // Collection: users/{userId}/logs/{logId}
+    // Fields:
+    //   - name: string (required)
+    //   - timestamp: number (required)
+    //   - nutrients: map (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "wardahca@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['age', 'gender']) &&
+             data.age is number && data.age > 0 && data.age < 150 &&
+             data.gender in ['male', 'female', 'other'] &&
+             (!('dietaryRestrictions' in data) || data.dietaryRestrictions is list) &&
+             (!('allergies' in data) || data.allergies is list) &&
+             (!('activityLevel' in data) || data.activityLevel in ['sedentary', 'light', 'moderate', 'active', 'very_active']) &&
+             (!('medicalConditions' in data) || data.medicalConditions is list) &&
+             (!('bloodTestSummary' in data) || data.bloodTestSummary is string);
+    }
+
+    function isValidNutrientData(data) {
+      return hasRequiredFields(['calories', 'protein', 'carbs', 'fat', 'fiber', 'vitaminA', 'vitaminC', 'calcium', 'iron']) &&
+             data.calories is number && data.protein is number && data.carbs is number &&
+             data.fat is number && data.fiber is number && data.vitaminA is number &&
+             data.vitaminC is number && data.calcium is number && data.iron is number;
+    }
+
+    function isValidLogEntry(data) {
+      return hasRequiredFields(['name', 'timestamp', 'nutrients']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.timestamp is number &&
+             isValidNutrientData(data.nutrients) &&
+             (!('symptoms' in data) || data.symptoms is list) &&
+             (!('imageUrl' in data) || data.imageUrl is string) &&
+             (!('warnings' in data) || data.warnings is list);
+    }
+
+    function isValidWaterLog(data) {
+      return hasRequiredFields(['amount', 'timestamp']) &&
+             data.amount is number && data.amount > 0 &&
+             data.timestamp is number;
+    }
+
+    function isValidRecipe(data) {
+      return hasRequiredFields(['name', 'nutrients']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             isValidNutrientData(data.nutrients);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+
+      match /targets/daily {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidNutrientData(request.resource.data);
+        allow update: if isOwner(userId) && isValidNutrientData(request.resource.data);
+      }
+
+      match /logs/{logId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidLogEntry(request.resource.data);
+        allow update: if isOwner(userId) && isValidLogEntry(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /water/{waterId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidWaterLog(request.resource.data);
+        allow update: if isOwner(userId) && isValidWaterLog(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /recipes/{recipeId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidRecipe(request.resource.data);
+        allow update: if isOwner(userId) && isValidRecipe(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

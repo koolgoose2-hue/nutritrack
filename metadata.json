@@ -1,0 +1,5 @@
+{
+  "name": "NutriTrack AI V2",
+  "description": "AI-powered nutrition tracker that analyzes your meals, monitors nutrient levels, and suggests foods to fill nutritional gaps.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
