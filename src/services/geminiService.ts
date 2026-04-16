@@ -64,7 +64,8 @@ export interface FoodAnalysis {
 }
 
 export async function analyzeFood(foodDescription: string, profile?: UserProfile): Promise<FoodAnalysis> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
   }
   const dietaryContext = profile ? `
@@ -116,7 +117,8 @@ export async function analyzeFood(foodDescription: string, profile?: UserProfile
 }
 
 export async function analyzeFoodImage(base64Image: string, profile?: UserProfile): Promise<FoodAnalysis> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
   }
   const dietaryContext = profile ? `
@@ -177,7 +179,8 @@ export async function analyzeFoodImage(base64Image: string, profile?: UserProfil
 }
 
 export async function getNutrientRecommendations(currentNutrients: NutrientData, profile: UserProfile): Promise<string> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     return "AI recommendations are unavailable because the API key is missing.";
   }
   const medicalContext = `
@@ -205,7 +208,8 @@ export async function getNutrientRecommendations(currentNutrients: NutrientData,
 }
 
 export async function analyzeMedicalDocument(base64Image: string): Promise<string> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     return "Document analysis is unavailable because the API key is missing.";
   }
   const ai = getAi();
@@ -228,7 +232,8 @@ export async function analyzeMedicalDocument(base64Image: string): Promise<strin
 }
 
 export async function getCanadaFoodGuideSummary(): Promise<string> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     return "Food guide information is unavailable because the API key is missing.";
   }
   const ai = getAi();
@@ -248,7 +253,8 @@ export async function getCanadaFoodGuideSummary(): Promise<string> {
 }
 
 export async function calculatePersonalizedTargets(profile: UserProfile): Promise<NutrientData> {
-  if (!GEMINI_API_KEY) {
+  const key = getApiKey();
+  if (!key) {
     throw new Error("Cannot calculate targets: Gemini API Key is missing.");
   }
   const ai = getAi();

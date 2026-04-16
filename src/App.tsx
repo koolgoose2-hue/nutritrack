@@ -448,9 +448,10 @@ function NutriTrackApp() {
       const logsColRef = collection(db, 'users', user.uid, 'logs');
       await addDoc(logsColRef, logData);
       setFoodInput('');
-    } catch (err) {
-      setError('Failed to analyze food. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to analyze food. Please try again.';
+      setError(msg);
+      console.error("Food analysis error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -477,9 +478,10 @@ function NutriTrackApp() {
         await addDoc(logsColRef, logData);
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      setError('Failed to analyze image. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to analyze image. Please try again.';
+      setError(msg);
+      console.error("Image analysis error:", err);
     } finally {
       setIsLoading(false);
     }
