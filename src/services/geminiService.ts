@@ -2,8 +2,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 const getApiKey = () => {
   // Try to get the key from various possible sources
-  const key = (import.meta as any).env.VITE_GEMINI_API_KEY || 
-              (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || 
+  // Prioritize process.env.GEMINI_API_KEY as per skill guidelines
+  const key = (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || 
+              (import.meta as any).env.VITE_GEMINI_API_KEY || 
               '';
   
   if (key && key !== 'undefined' && key !== 'null') {
@@ -28,7 +29,7 @@ const getAi = () => {
     if (!key) {
       throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
     }
-    aiInstance = new GoogleGenAI(key);
+    aiInstance = new GoogleGenAI({ apiKey: key });
   }
   return aiInstance;
 };
