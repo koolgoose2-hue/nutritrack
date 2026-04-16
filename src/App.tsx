@@ -508,14 +508,24 @@ function NutriTrackApp() {
   };
 
   const addWater = async (amount: number) => {
-    if (!user) return;
+    if (!user) {
+      console.warn("User not logged in, cannot add water.");
+      return;
+    }
+    console.log(`Adding ${amount}ml of water...`);
     try {
+      const now = new Date();
+      const logDate = new Date(selectedDate);
+      logDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+      
       const waterColRef = collection(db, 'users', user.uid, 'water');
       await addDoc(waterColRef, {
         amount,
-        timestamp: new Date(selectedDate + 'T' + new Date().toLocaleTimeString('en-US', { hour12: false })).getTime(),
+        timestamp: logDate.getTime(),
       });
+      console.log("Water added successfully.");
     } catch (err) {
+      console.error("Error adding water:", err);
       handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/water`);
     }
   };
@@ -1034,63 +1044,75 @@ function NutriTrackApp() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                        <XAxis type="number" hide />
-                        <YAxis 
-                          dataKey="name" 
-                          type="category" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          width={60}
-                          tick={{ fontSize: 12, fontWeight: 500 }}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: 'transparent' }}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-white p-3 shadow-xl border border-slate-100 rounded-lg text-xs">
-                                  <p className="font-bold mb-1">{data.name}</p>
-                                  <p className="text-slate-500">Current: {data.value.toFixed(1)}{data.unit}</p>
-                                  <p className="text-slate-500">Target: {data.target.toFixed(1)}{data.unit}</p>
-                                  <p className="text-emerald-500 font-bold mt-1">
-                                    {Math.min(100, (data.value / data.target) * 100).toFixed(0)}% of target
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Bar dataKey="target" fill="#f1f5f9" radius={[0, 4, 4, 0]} barSize={24} />
-                        <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-[300px]">
+                  <div className="h-64 w-full">
+                    {chartData.some(d => d.value > 0) ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                          <XAxis type="number" hide />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            width={60}
+                            tick={{ fontSize: 12, fontWeight: 500 }}
+                          />
+                          <Tooltip 
+                            cursor={{ fill: 'transparent' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-white p-3 shadow-xl border border-slate-100 rounded-lg text-xs">
+                                    <p className="font-bold mb-1">{data.name}</p>
+                                    <p className="text-slate-500">Current: {data.value.toFixed(1)}{data.unit}</p>
+                                    <p className="text-slate-500">Target: {data.target.toFixed(1)}{data.unit}</p>
+                                    <p className="text-emerald-500 font-bold mt-1">
+                                      {Math.min(100, (data.value / data.target) * 100).toFixed(0)}% of target
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar dataKey="target" fill="#f1f5f9" radius={[0, 4, 4, 0]} barSize={24} />
+                          <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-400 text-sm italic">
+                        No data logged for today.
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col justify-center items-center">
+                  <div className="flex flex-col justify-center items-center h-64 w-full">
                     <div className="h-48 w-48 relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={macroPieData}
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {macroPieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      {macroPieData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={macroPieData}
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {macroPieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-300">
+                          <Activity className="w-12 h-12 opacity-20" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <p className="text-2xl font-bold">{totals.calories.toFixed(0)}</p>
                         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest text-center">Total Cals</p>
                       </div>
